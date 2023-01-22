@@ -1,16 +1,32 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { request } from "@/utils/request";
 import { notFoundError, requestError } from "@/errors";
 import addressRepository, { CreateAddressParams } from "@/repositories/address-repository";
 import enrollmentRepository, { CreateEnrollmentParams } from "@/repositories/enrollment-repository";
 import { exclude } from "@/utils/prisma-utils";
 import { Address, Enrollment } from "@prisma/client";
+import { AdressType } from "@/types/enrollments";
 
 async function getAddressFromCEP(cep: string) {
-  const result = await request.get("https://viacep.com.br/ws/37440000/json/");
+  const result = await request.get(`https://viacep.com.br/ws/${cep}/json/`);
 
   if (!result.data) {
     throw notFoundError();
   }
+
+  if (result.data.erro) {
+    return result.data;
+  }
+
+  const body = {
+    logradouro: result.data.logradouro,
+    complemento: result.data.complemento,
+    bairro: result.data.bairro,
+    cidade: result.data.localidade,
+    uf: result.data.uf
+  } as AdressType;
+
+  return body;
 }
 
 async function getOneWithAddressByUserId(userId: number): Promise<GetOneWithAddressByUserIdResult> {
